@@ -655,7 +655,7 @@ function GetAADTenant()
             $uri = "https://graph.windows.net/{0}/me?api-version=1.6" -f $tenant
             $authResult = GetAuthenticationResult $tenant $global:aadLoginUrl "https://graph.windows.net/" $global:AzureAccountName -Prompt "Auto"
             $header = $authResult.CreateAuthorizationHeader()
-            $result = Invoke-RestMethod -Method "GET" -Uri $uri -Headers @{"Authorization"=$header;"Content-Type"="application/json"}
+            $result = Invoke-RestMethod -Method "GET" -Uri $uri  -ContentType 'application/json' -Headers @{"Authorization"=$header}
             if ($result -ne $null)
             {
                 $directory = New-Object System.Object
@@ -690,11 +690,11 @@ function GetAADTenant()
     $header = $authResult.CreateAuthorizationHeader()
 
     # Check for application
-    $result = Invoke-RestMethod -Method "GET" -Uri $searchUri -Headers @{"Authorization"=$header;"Content-Type"="application/json"}
+    $result = Invoke-RestMethod -Method "GET" -Uri $searchUri -ContentType 'application/json' -Headers @{"Authorization"=$header}
     if ($result.value.Count -eq 0)
     {
         $body = ReplaceFileParameters ("{0}\Application.json" -f $global:azurePath) -arguments @($global:site, $global:environmentName)
-        $result = Invoke-RestMethod -Method "POST" -Uri $uri -Headers @{"Authorization"=$header;"Content-Type"="application/json"} -Body $body -ErrorAction SilentlyContinue
+        $result = Invoke-RestMethod -Method "POST" -Uri $uri  -ContentType 'application/json' -Headers @{"Authorization"=$header} -Body $body -ErrorAction SilentlyContinue
         if ($result -eq $null)
         {
             throw "Unable to create application'$($global:site)iotsuite'"
@@ -711,11 +711,11 @@ function GetAADTenant()
     # Check for ServicePrincipal
     $uri = "https://graph.windows.net/{0}/servicePrincipals?api-version=1.6" -f $tenantId
     $searchUri = "{0}&`$filter=appId%20eq%20'{1}'" -f $uri, $applicationId
-    $result = Invoke-RestMethod -Method "GET" -Uri $searchUri -Headers @{"Authorization"=$header;"Content-Type"="application/json"}
+    $result = Invoke-RestMethod -Method "GET" -Uri $searchUri  -ContentType 'application/json' -Headers @{"Authorization"=$header}
     if ($result.value.Count -eq 0)
     {
         $body = "{ `"appId`": `"$applicationId`" }"
-        $result = Invoke-RestMethod -Method "POST" -Uri $uri -Headers @{"Authorization"=$header;"Content-Type"="application/json"} -Body $body -ErrorAction SilentlyContinue
+        $result = Invoke-RestMethod -Method "POST" -Uri $uri  -ContentType 'application/json' -Headers @{"Authorization"=$header} -Body $body -ErrorAction SilentlyContinue
         if ($result -eq $null)
         {
             throw "Unable to create ServicePrincipal for application '$($global:site)iotsuite'"
@@ -733,11 +733,11 @@ function GetAADTenant()
 
     # Check for Assigned User
     $uri = "https://graph.windows.net/{0}/users/{1}/appRoleAssignments?api-version=1.6" -f $tenantId, $authResult.UserInfo.UniqueId
-    $result = Invoke-RestMethod -Method "GET" -Uri $uri -Headers @{"Authorization"=$header;"Content-Type"="application/json"}
+    $result = Invoke-RestMethod -Method "GET" -Uri $uri  -ContentType 'application/json' -Headers @{"Authorization"=$header}
     if (($result.value | ?{$_.ResourceId -eq $resourceId}) -eq $null)
     {
         $body = "{ `"id`": `"$roleId`", `"principalId`": `"$($authResult.UserInfo.UniqueId)`", `"resourceId`": `"$resourceId`" }"
-        $result = Invoke-RestMethod -Method "POST" -Uri $uri -Headers @{"Authorization"=$header;"Content-Type"="application/json"} -Body $body -ErrorAction SilentlyContinue
+        $result = Invoke-RestMethod -Method "POST" -Uri $uri  -ContentType 'application/json' -Headers @{"Authorization"=$header} -Body $body -ErrorAction SilentlyContinue
         if ($result -eq $null)
         {
             Write-Warning "Unable to create RoleAssignment for application '$($global:site)iotsuite' for current user - will be Implicit Readonly"
@@ -855,14 +855,20 @@ function FixWebJobZip()
     $zipfile = get-item $filePath
     $zip = [System.IO.Compression.ZipFile]::Open($zipfile.FullName, "Update")
 
-    $entries = $zip.Entries.Where({$_.FullName.Contains("EventProcessor-WebJob/settings.job")})
-    foreach ($entry in $entries) { $entry.Delete() }
+   # $entries = $zip.Entries
 
-    $entries = $zip.Entries.Where({$_.FullName.Contains("EventProcessor-WebJob/Simulator")})
-    foreach ($entry in $entries) { $entry.Delete() }
-
-    $entries = $zip.Entries.Where({$_.FullName.Contains("DeviceSimulator-WebJob/EventProcessor")})
-    foreach ($entry in $entries) { $entry.Delete() }
+    foreach ($entry in $zip.Entries) { 
+        if ($entry.FullName.Contains("EventProcessor-WebJob/settings.job")){
+            $entry.Delete() 
+        }
+        elseif ($entry.FullName.Contains("EventProcessor-WebJob/Simulator")){
+            $entry.Delete() 
+        }
+        elseif ($entry.FullName.Contains("DeviceSimulator-WebJob/EventProcessor")){
+            $entry.Delete() 
+        }
+    }
+    
 
     $zip.Dispose()
 }
