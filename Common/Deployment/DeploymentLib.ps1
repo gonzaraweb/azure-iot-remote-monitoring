@@ -853,6 +853,8 @@ function FixWebJobZip()
         [Parameter(Mandatory=$true,Position=0)] [string] $filePath
     )
     $zipfile = get-item $filePath
+
+	Write-Host 'updating zip containing the web jobs '+ $filePath
     $zip = [System.IO.Compression.ZipFile]::Open($zipfile.FullName, "Update")
 
    # $entries = $zip.Entries
