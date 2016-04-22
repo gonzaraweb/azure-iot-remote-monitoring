@@ -853,27 +853,20 @@ function FixWebJobZip()
         [Parameter(Mandatory=$true,Position=0)] [string] $filePath
     )
     $zipfile = get-item $filePath
-
-	Write-Host 'updating zip containing the web jobs '+ $filePath
     $zip = [System.IO.Compression.ZipFile]::Open($zipfile.FullName, "Update")
 
-   # $entries = $zip.Entries
+    $entries = $zip.Entries.Where({$_.FullName.Contains("EventProcessor-WebJob/settings.job")})
+    foreach ($entry in $entries) { $entry.Delete() }
 
-    foreach ($entry in $zip.Entries) { 
-        if ($entry.FullName.Contains("EventProcessor-WebJob/settings.job")){
-            $entry.Delete() 
-        }
-        elseif ($entry.FullName.Contains("EventProcessor-WebJob/Simulator")){
-            $entry.Delete() 
-        }
-        elseif ($entry.FullName.Contains("DeviceSimulator-WebJob/EventProcessor")){
-            $entry.Delete() 
-        }
-    }
-    
+    $entries = $zip.Entries.Where({$_.FullName.Contains("EventProcessor-WebJob/Simulator")})
+    foreach ($entry in $entries) { $entry.Delete() }
+
+    $entries = $zip.Entries.Where({$_.FullName.Contains("DeviceSimulator-WebJob/EventProcessor")})
+    foreach ($entry in $entries) { $entry.Delete() }
 
     $zip.Dispose()
 }
+
 
 # Variable initialization
 [int]$global:envSettingsChanges = 0;

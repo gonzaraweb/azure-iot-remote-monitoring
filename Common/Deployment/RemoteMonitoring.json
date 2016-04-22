@@ -183,7 +183,7 @@
             "plan": {
                 "publisher": "bingmaps",
                 "product": "mapapis",
-                "name": "internal1",
+                "name": "public1",
                 "promotionCode": null
             },
             "tags": {
