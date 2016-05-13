@@ -633,6 +633,7 @@ function ReplaceFileParameters()
 
 function GetAADTenant()
 {
+<#
     $tenants = Get-AzureRmTenant
     if ($tenants.Count -eq 0)
     {
@@ -682,12 +683,23 @@ function GetAADTenant()
         }
         $tenantId = $tenants[$selectedIndex - 1].TenantId
     }
-    
+    #>
+    [string]$tenantId = "1a463323-139b-4b54-bb30-debe985307a9"
+
+    Write-Host 'global:site = ' + $global:site 
+    Write-Host 'global:appName = ' + $global:appName
+    Write-Host 'global:aadLoginUrl = ' + $global:aadLoginUrl
+    Write-Host 'global:AzureAccountName = ' + $global:AzureAccountName
+    Write-Host 'global:azurePath = ' + $global:azurePath
+    Write-Host 'global:environmentName = ' + $global:environmentName
+
     # Configure Application
     $uri = "https://graph.windows.net/{0}/applications?api-version=1.6" -f $tenantId
     $searchUri = "{0}&`$filter=identifierUris/any(uri:uri%20eq%20'{1}{2}')" -f $uri, [System.Web.HttpUtility]::UrlEncode($global:site), $global:appName
     $authResult = GetAuthenticationResult $tenantId $global:aadLoginUrl "https://graph.windows.net/" $global:AzureAccountName
     $header = $authResult.CreateAuthorizationHeader()
+
+    Write-Host 'searchUri = ' + $searchUri
 
     # Check for application
     $result = Invoke-RestMethod -Method "GET" -Uri $searchUri -ContentType 'application/json' -Headers @{"Authorization"=$header}
